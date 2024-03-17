@@ -7,7 +7,35 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-export const pgTable = pgTableCreator((name) => `social-app_${name}`);
+export const pgTable = pgTableCreator((name) => `osl_${name}`);
+
+export const users = pgTable("user", {
+	id: text("id").primaryKey(),
+	username: text("username").notNull().unique(),
+	hashedPassword: text("hashed_password").notNull(),
+});
+
+export const sessions = pgTable("session", {
+	id: text("id").primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id),
+	expiresAt: timestamp("expires_at", {
+		withTimezone: true,
+		mode: "date",
+	}).notNull(),
+});
+
+export const userRelations = relations(users, ({ many }) => ({
+	sessions: many(sessions),
+}));
+
+export const sessionRelations = relations(sessions, ({ one }) => ({
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id],
+	}),
+}));
 
 export const shoppingLists = pgTable("shopping_list", {
 	id: uuid("id").primaryKey().defaultRandom().unique(),
